@@ -15,9 +15,9 @@ TOKEN_ENV_VAR = "ASANA_TOKEN"
 
 # Configure personal access token
 configuration = asana.Configuration()
-#configuration.access_token = (
+# configuration.access_token = (
 #    "2/1208085993592881/1208468006795122:f0426c416206b166a5ef6ae9320177ca"
-#)
+# )
 configuration.access_token = os.environ.get(TOKEN_ENV_VAR)
 api_client = asana.ApiClient(configuration)
 
@@ -48,7 +48,13 @@ SUPPORT_BOARD_ID = "1201157086826331"
     help="Filter tasks completed since this date",
 )
 def asana_router(
-    support_board, code_orange, velo_tracking, project_id, completed_since, specific_tasks, task_id_file
+    support_board,
+    code_orange,
+    velo_tracking,
+    project_id,
+    completed_since,
+    specific_tasks,
+    task_id_file,
 ):
     if support_board:
         support_board_stats()
@@ -78,6 +84,7 @@ def code_orange_stats():
             f"{x['name']},{x['completed']},{x['completed_at']},{x['completed_by']},{x['permalink_url']},{assignee.get("name", "unknown")}"
         )
 
+
 def get_specific_tasks(task_id_file=None):
     tasks_api = asana.TasksApi(api_client)
     full_task_list = []
@@ -91,8 +98,10 @@ def get_specific_tasks(task_id_file=None):
                 "opt_fields": "name,completed,created_at,permalink_url,assignee.name,custom_fields",
             },
         )
-        task["converted_time"] = datetime.strptime(task["created_at"].split("T")[0], "%Y-%m-%d")
-        
+        task["converted_time"] = datetime.strptime(
+            task["created_at"].split("T")[0], "%Y-%m-%d"
+        )
+
         full_task_list.append(task)
     sorted_tasks = sorted(full_task_list, key=lambda x: x["converted_time"])
     oldest_tasks = 0
@@ -110,11 +119,10 @@ def get_specific_tasks(task_id_file=None):
             old_tasks += 1
         else:
             this_year += 1
-    
+
     print(f"Oldest tasks: {oldest_tasks}")
     print(f"Old tasks: {old_tasks}")
     print(f"This year tasks: {this_year}")
-
 
 
 def support_board_stats():
