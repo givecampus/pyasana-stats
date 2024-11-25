@@ -29,6 +29,7 @@ opts = {}
 # PLATFORM_SPRINT_ID = '1205117034782288' # NOPE
 PLATFORM_SPRINT_ID = "1203953156205290"
 ESTIMATED_POINTS_GID = "1202399449289965"
+POINTS_GID = "1199932036644229"
 SUPPORT_BOARD_ID = "1201157086826331"
 
 
@@ -172,28 +173,37 @@ def velocity_tracking(completed_since=None, project_id=None):
     point_tally = 0
     for x in tasks:
         if x["completed"]:
+            point_value = est_point_value = None
             for cf in x["custom_fields"]:
                 if cf["gid"] == ESTIMATED_POINTS_GID:
-                    try:
-                        point = float(cf["enum_value"]["name"].split("-")[0].strip())
-                        point_tally += point
-                    except (KeyError, TypeError):
-                        # import ipdb; ipdb.set_trace()
-                        print(colored("--- MISSING POINTS ---", "red"))
-                        print(
-                            colored(
-                                f"Task: {x['name']}, has no points. Go to {x['permalink_url']} to update",
-                                "red",
-                            )
-                        )
-                    except ValueError:
-                        print(f"Bad point value: {point}")
+                    est_point_value = cf["enum_value"]["name"].split("-")[0].strip() if cf.get("enum_value") else None
+                elif cf["gid"] == POINTS_GID:
+                    point_value = cf["enum_value"]["name"].split("-")[0].strip() if cf.get("enum_value") else None
 
-                    try:
-                        completed_by_gid = x["completed_by"]["gid"]
-                        user_completion_dict[completed_by_gid] += point
-                    except KeyError:
-                        print(f"Task {x['name']} has no completed_by")
+            try:
+                if point_value:
+                    point = float(point_value)
+                else:
+                    point = float(est_point_value)
+            except (KeyError, TypeError):
+                import ipdb; ipdb.set_trace()
+                print(colored("--- MISSING POINTS ---", "red"))
+                print(
+                    colored(
+                        f"Task: {x['name']}, has no points. Go to {x['permalink_url']} to update",
+                        "red",
+                    )
+                )
+            except ValueError:
+                print(f"Bad point value: {point}")
+
+            point_tally += point
+
+            try:
+                completed_by_gid = x["completed_by"]["gid"]
+                user_completion_dict[completed_by_gid] += point
+            except KeyError:
+                print(f"Task {x['name']} has no completed_by")
 
     print(f"Total points completed: {point_tally}, since {completed_since}")
     for user_gid, points in user_completion_dict.items():
