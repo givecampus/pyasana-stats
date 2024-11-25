@@ -39,6 +39,8 @@ SUPPORT_BOARD_ID = "1201157086826331"
 @click.option(
     "-p", "--project-id", default=None, help="Filter tasks for this project id"
 )
+@click.option("-s", "--specific-tasks", is_flag=True, help="List specific tasks")
+@click.option("--task-id-file", default=None, help="File with task ids")
 @click.option(
     "-c",
     "--completed-since",
@@ -46,7 +48,7 @@ SUPPORT_BOARD_ID = "1201157086826331"
     help="Filter tasks completed since this date",
 )
 def asana_router(
-    support_board, code_orange, velo_tracking, project_id, completed_since
+    support_board, code_orange, velo_tracking, project_id, completed_since, specific_tasks, task_id_file
 ):
     if support_board:
         support_board_stats()
@@ -54,6 +56,8 @@ def asana_router(
         code_orange_stats()
     elif velo_tracking:
         velocity_tracking(completed_since, project_id)
+    elif specific_tasks:
+        get_specific_tasks(task_id_file)
     else:
         print("No command specified")
 
@@ -73,6 +77,44 @@ def code_orange_stats():
         print(
             f"{x['name']},{x['completed']},{x['completed_at']},{x['completed_by']},{x['permalink_url']},{assignee.get("name", "unknown")}"
         )
+
+def get_specific_tasks(task_id_file=None):
+    tasks_api = asana.TasksApi(api_client)
+    full_task_list = []
+    filename = task_id_file or "list_of_ids.txt"
+    for id in open(filename):
+        if not id:
+            continue
+        task = tasks_api.get_task(
+            id.strip(),
+            {
+                "opt_fields": "name,completed,created_at,permalink_url,assignee.name,custom_fields",
+            },
+        )
+        task["converted_time"] = datetime.strptime(task["created_at"].split("T")[0], "%Y-%m-%d")
+        
+        full_task_list.append(task)
+    sorted_tasks = sorted(full_task_list, key=lambda x: x["converted_time"])
+    oldest_tasks = 0
+    old_tasks = 0
+    this_year = 0
+    print("name,completed,created_at,updated_at,permalink_url,assignee.name")
+    for task in sorted_tasks:
+        assignee = task["assignee"] or {}
+        print(
+            f"{task['name']},{task['completed']},{task['created_at']},{task['permalink_url']},{assignee.get("name", "unknown")}"
+        )
+        if task["converted_time"].year == 2022:
+            oldest_tasks += 1
+        elif task["converted_time"].year == 2023:
+            old_tasks += 1
+        else:
+            this_year += 1
+    
+    print(f"Oldest tasks: {oldest_tasks}")
+    print(f"Old tasks: {old_tasks}")
+    print(f"This year tasks: {this_year}")
+
 
 
 def support_board_stats():
