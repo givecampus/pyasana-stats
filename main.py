@@ -2,6 +2,7 @@ import os
 from csv import DictWriter
 from datetime import datetime, date, timedelta
 from collections import defaultdict
+from pprint import pprint
 
 # Import the library
 import asana
@@ -205,8 +206,7 @@ def project_tracking(project_id=None):
             epic_dict[epic_name][dict_key] = 1
 
     print(f"Total tasks: {count}")
-    import ipdb; ipdb.set_trace()
-    print('hi')
+    pprint(epic_dict)
 
 
 @click.option(
