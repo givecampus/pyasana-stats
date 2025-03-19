@@ -16,9 +16,6 @@ TOKEN_ENV_VAR = "ASANA_TOKEN"
 
 # Configure personal access token
 configuration = asana.Configuration()
-# configuration.access_token = (
-#    "2/1208085993592881/1208468006795122:f0426c416206b166a5ef6ae9320177ca"
-# )
 configuration.access_token = os.environ.get(TOKEN_ENV_VAR)
 api_client = asana.ApiClient(configuration)
 
